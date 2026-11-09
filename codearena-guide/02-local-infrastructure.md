@@ -47,16 +47,29 @@ services:
   sqs:                            # ElasticMQ: SQS-compatible API, queues pre-created from elasticmq.conf
     image: softwaremill/elasticmq-native:latest
     volumes: [ "./elasticmq.conf:/opt/elasticmq.conf:ro" ]
-    ports: [ "127.0.0.1:9702:9324", "127.0.0.1:9707:9325" ]   # 9707 = ElasticMQ web UI
+    ports: [ "127.0.0.1:9702:9324" ]
+    restart: unless-stopped
+
+  sqs-ui:                         # ElasticMQ web console (a separate image since the UI left elasticmq-native)
+    image: softwaremill/elasticmq-ui:latest
+    environment:
+      SQS_ENDPOINT: http://sqs:9324
+      AWS_REGION: ap-south-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+    ports: [ "127.0.0.1:9707:3000" ]
+    depends_on: [ sqs ]
     restart: unless-stopped
 
   s3:                             # Adobe S3Mock: S3-compatible API, files kept in a volume
-    image: adobe/s3mock:latest
+    image: adobe/s3mock:5.2.3     # pinned: 5.x changed env names and storage format; 4.x data is not readable
+    user: root                    # since 5.2 the image runs as a non-root user; without this a named volume is
+                                  # not writable and every S3 call returns 500 InternalError
     environment:
       COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: codearena-tests,codearena-submissions
       COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: "true"
-      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /s3data
-    volumes: [ "s3-data:/s3data" ]
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /s3mockroot
+    volumes: [ "s3-data:/s3mockroot" ]
     ports: [ "127.0.0.1:9703:9090" ]
     restart: unless-stopped
 
@@ -118,12 +131,6 @@ rest-sqs {
   bind-port = 9324
   bind-hostname = "0.0.0.0"
   sqs-limits = strict
-}
-
-rest-stats {
-  enabled = true
-  bind-port = 9325
-  bind-hostname = "0.0.0.0"
 }
 
 queues {
@@ -289,7 +296,14 @@ def create_tables():
 
 
 def create_buckets():
-    have = {b["Name"] for b in wait_for("S3", lambda: s3.list_buckets().get("Buckets", []))}
+    try:
+        have = {b["Name"] for b in wait_for("S3", lambda: s3.list_buckets().get("Buckets", []))}
+    except ClientError as e:
+        if e.response.get("Error", {}).get("Code") == "InternalError":
+            sys.exit("S3Mock answered 500 InternalError: it cannot write its store. Run\n"
+                     "  docker compose -f deploy/compose/docker-compose.yml logs s3 | tail -30\n"
+                     "and see chapter 16 (S3Mock InternalError): recreate the s3 container and its volume.")
+        raise
     for b in BUCKETS:
         if b not in have:
             s3.create_bucket(Bucket=b, CreateBucketConfiguration={"LocationConstraint": REGION})
@@ -310,8 +324,8 @@ if __name__ == "__main__":
 ```
 
 `scripts/up.sh` is the one command to run after a reboot: start containers, wait for ports, create the JWT
-signing key, bootstrap, seed. The seed script and problems arrive in chapter 06; until then, comment out the
-seed lines.
+signing key, bootstrap, seed. The seed script and problems arrive in chapter 06; until then `up.sh` prints
+`skipped: scripts/seed.py and seed/problems arrive in chapter 06`, which is expected.
 
 **File:** `scripts/up.sh`
 
@@ -328,7 +342,7 @@ COMPOSE=(docker compose -f deploy/compose/docker-compose.yml)
 set -a; source .env; set +a
 
 echo "==> starting infrastructure"
-"${COMPOSE[@]}" up -d ${TOOLS:+--profile tools}
+"${COMPOSE[@]}" ${TOOLS:+--profile tools} up -d
 
 wait_port() {   # host port name
   for _ in $(seq 1 60); do
@@ -353,7 +367,11 @@ echo "==> tables, buckets, queues"
 scripts/py.sh scripts/bootstrap.py
 
 echo "==> seed problems"
-scripts/py.sh scripts/seed.py
+if [[ -f scripts/seed.py && -d seed/problems ]]; then
+  scripts/py.sh scripts/seed.py
+else
+  echo "    skipped: scripts/seed.py and seed/problems arrive in chapter 06"
+fi
 
 cat <<MSG
 

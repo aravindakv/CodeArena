@@ -3,6 +3,8 @@
 | Symptom | Likely cause | Fix |
 | --- | --- | --- |
 | `Configuring project ':services:...' without an existing directory is not allowed` | an older `settings.gradle.kts` lists modules you have not created yet | use the current `settings.gradle.kts` (chapter 01), which skips missing modules |
+| `bootstrap.py`: `waiting for S3... (ClientError)`, then `InternalError ... ListBuckets` | S3Mock 5.2+ runs as a non-root user and cannot write its named volume (or the volume holds 4.x data, which 5.x cannot read) | use the current `docker-compose.yml` (pinned `5.2.3`, `user: root`, store at `/s3mockroot`), then `docker compose -f deploy/compose/docker-compose.yml rm -sf s3 && docker volume rm codearena_s3-data && scripts/up.sh` |
+| `http://localhost:9707` gives `ERR_CONNECTION_RESET` | newer `elasticmq-native` images have no built-in web UI on 9325; the console is now the separate `softwaremill/elasticmq-ui` image | use the current `docker-compose.yml` (service `sqs-ui`, 9707 → 3000), then `scripts/up.sh`; queues themselves are unaffected |
 | `./gradlew` not found | the wrapper was not created | `gradle wrapper --gradle-version 9.1.0` from the repo root (it needs `settings.gradle.kts` to exist) |
 | Build fails and "What went wrong" shows only `25.0.x` | an old Gradle (8.x) runs on JDK 25 | check `distributionUrl` in `gradle/wrapper/gradle-wrapper.properties` says 9.1.0, then `./gradlew --stop` |
 | `Downloading ... gradle-9.1.0-bin.zip failed: timeout` while curl works | Java cannot reach the GitHub download host on your network | `curl -L -o ~/gradle-dists/gradle-9.1.0-bin.zip <url>`, set `distributionUrl=file\:...` in `gradle/wrapper/gradle-wrapper.properties` (do not commit it) |

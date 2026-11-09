@@ -1872,7 +1872,7 @@ if __name__ == "__main__":
 
 ## Check
 
-Re-enable the seed lines in `scripts/up.sh` if you commented them out, then:
+`scripts/up.sh` now finds the seed script and stops skipping the seed step:
 
 ```bash
 scripts/py.sh scripts/seed.py --check     # no AWS needed: all 7 problems verified
