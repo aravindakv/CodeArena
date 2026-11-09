@@ -1,0 +1,30 @@
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedReader;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+
+// CodeArena harness (generated, hidden from users). Results go to /out/results.jsonl, one line per test.
+public class Main {
+    public static void main(String[] ca_args) throws Exception {
+        ObjectMapper ca_m = new ObjectMapper();
+        BufferedReader ca_in = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
+        try (PrintWriter ca_res = new PrintWriter(new OutputStreamWriter(
+                new FileOutputStream("/out/results.jsonl"), StandardCharsets.UTF_8))) {
+            String ca_line;
+            while ((ca_line = ca_in.readLine()) != null) {
+                if (ca_line.isBlank()) continue;
+                JsonNode ca_n = ca_m.readTree(ca_line);
+                {{#params}}
+                {{valueType}} {{name}} = ca_m.convertValue(ca_n.get("{{name}}"), {{valueType}}.class);
+                {{/params}}
+                Object ca_r = new Solution().{{function}}({{#params}}{{name}}{{^last}}, {{/last}}{{/params}});
+                ca_res.println(ca_m.writeValueAsString(ca_r));
+                ca_res.flush();
+            }
+        }
+    }
+}

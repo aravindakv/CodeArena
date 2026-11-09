@@ -1,0 +1,14 @@
+# CodeArena harness (generated, hidden from users). Results go to /out/results.jsonl, one line per test.
+import sys as ca_sys
+import json as ca_json
+from typing import *
+
+ca_res = open("/out/results.jsonl", "w", buffering=1, encoding="utf-8")
+exec(compile(open("/work/solution.py", encoding="utf-8").read(), "solution.py", "exec"))
+
+for ca_line in ca_sys.stdin:
+    if not ca_line.strip():
+        continue
+    ca_a = ca_json.loads(ca_line)
+    ca_r = Solution().{{function}}({{#params}}ca_a["{{name}}"]{{^last}}, {{/last}}{{/params}})
+    ca_res.write(ca_json.dumps(ca_r, separators=(",", ":")) + "\n")

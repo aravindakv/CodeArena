@@ -1,0 +1,23 @@
+// CodeArena harness (generated, hidden from users). Results go to /out/results.jsonl, one line per test.
+#include <bits/stdc++.h>
+#include <nlohmann/json.hpp>
+using namespace std;
+
+#include "solution.cpp"
+
+int main() {
+    ios::sync_with_stdio(false);
+    ofstream ca_res("/out/results.jsonl");
+    string ca_line;
+    while (getline(cin, ca_line)) {
+        if (ca_line.empty()) continue;
+        auto ca_j = nlohmann::json::parse(ca_line);
+        {{#params}}
+        auto {{name}} = ca_j["{{name}}"].get<{{valueType}}>();
+        {{/params}}
+        Solution ca_s;
+        auto ca_r = ca_s.{{function}}({{#params}}{{name}}{{^last}}, {{/last}}{{/params}});
+        ca_res << nlohmann::json(ca_r).dump() << '\n' << flush;
+    }
+    return 0;
+}

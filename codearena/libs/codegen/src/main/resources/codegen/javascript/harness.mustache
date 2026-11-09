@@ -1,0 +1,13 @@
+// CodeArena harness (generated, hidden from users). Results go to /out/results.jsonl, one line per test.
+const ca_fs = require("fs");
+const ca_vm = require("vm");
+
+ca_vm.runInThisContext(ca_fs.readFileSync("/work/solution.js", "utf8"), { filename: "solution.js" });
+const ca_out = ca_fs.openSync("/out/results.jsonl", "w");
+
+for (const ca_line of ca_fs.readFileSync(0, "utf8").split("\n")) {
+  if (!ca_line.trim()) continue;
+  const ca_a = JSON.parse(ca_line);
+  const ca_r = {{function}}({{#params}}ca_a["{{name}}"]{{^last}}, {{/last}}{{/params}});
+  ca_fs.writeSync(ca_out, JSON.stringify(ca_r === undefined ? null : ca_r) + "\n");
+}

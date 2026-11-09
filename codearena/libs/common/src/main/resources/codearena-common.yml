@@ -1,0 +1,47 @@
+# Shared defaults, imported by every service with:  spring.config.import: classpath:codearena-common.yml
+# Every value can be overridden with an environment variable (see .env.example).
+spring:
+  cloud:
+    aws:
+      region:
+        static: ${AWS_REGION:ap-south-1}
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID:local}
+        secret-key: ${AWS_SECRET_ACCESS_KEY:local}
+      dynamodb:
+        endpoint: ${DYNAMO_ENDPOINT:http://localhost:9700}
+      s3:
+        endpoint: ${S3_ENDPOINT:http://localhost:9703}
+        path-style-access-enabled: true
+      sqs:
+        endpoint: ${SQS_ENDPOINT:http://localhost:9702}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:9701}
+      timeout: 500ms            # fail fast instead of hanging when Redis is down
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_URL:http://localhost:9081}/.well-known/jwks.json
+          audiences: codearena-api
+  jackson:
+    default-property-inclusion: non_null
+  threads:
+    virtual:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  pattern:
+    level: "%5p [%X{traceId:-}]"

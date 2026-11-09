@@ -1,9 +1,14 @@
 .gradle/
 build/
 out/
+bin/
+.kotlin/
 .idea/
 .vscode/
 *.iml
+.project
+.classpath
+.settings/
 .local/
 .env
 node_modules/

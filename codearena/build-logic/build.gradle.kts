@@ -1,6 +1,11 @@
-
 plugins {
     `kotlin-dsl`
+}
+
+// Also declared in build-logic/settings.gradle.kts; repeated here so the plugins resolve even if that file is missing.
+repositories {
+    gradlePluginPortal()
+    mavenCentral()
 }
 
 dependencies {

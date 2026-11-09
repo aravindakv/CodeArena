@@ -1,0 +1,37 @@
+// CodeArena harness (generated, hidden from users). Results go to /out/results.jsonl, one line per test.
+package main
+
+import (
+	"bufio"
+	"encoding/json"
+	"os"
+)
+
+func main() {
+	ca_in := bufio.NewScanner(os.Stdin)
+	ca_in.Buffer(make([]byte, 1024*1024), 64*1024*1024)
+	ca_f, ca_err := os.Create("/out/results.jsonl")
+	if ca_err != nil {
+		panic(ca_err)
+	}
+	defer ca_f.Close()
+	for ca_in.Scan() {
+		ca_line := ca_in.Bytes()
+		if len(ca_line) == 0 {
+			continue
+		}
+		var ca_a map[string]json.RawMessage
+		if err := json.Unmarshal(ca_line, &ca_a); err != nil {
+			panic(err)
+		}
+		{{#params}}
+		var {{name}} {{valueType}}
+		if err := json.Unmarshal(ca_a["{{name}}"], &{{name}}); err != nil {
+			panic(err)
+		}
+		{{/params}}
+		ca_r := {{function}}({{#params}}{{name}}{{^last}}, {{/last}}{{/params}})
+		ca_b, _ := json.Marshal(ca_r)
+		ca_f.Write(append(ca_b, '\n'))
+	}
+}
