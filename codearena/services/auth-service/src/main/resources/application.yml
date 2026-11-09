@@ -1,0 +1,18 @@
+server:
+  port: ${PORT:9081}
+spring:
+  application:
+    name: auth-service
+  config:
+    import: classpath:codearena-common.yml
+
+codearena:
+  jwt:
+    issuer: codearena-auth
+    audience: codearena-api
+    access-ttl: 15m
+    admin-access-ttl: 5m          # admins get shorter-lived tokens
+    refresh-ttl: 7d
+    private-key-file: ${JWT_PRIVATE_KEY_FILE:.local/jwt-private.pem}   # created by scripts/up.sh
+  cookie-secure: ${COOKIE_SECURE:false}                               # true behind HTTPS
+  bootstrap-admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}                     # this email becomes ADMIN on register
