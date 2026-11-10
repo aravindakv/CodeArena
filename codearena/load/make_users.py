@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-"""Creates N load-test users through the gateway and writes their access tokens to load/tokens.json.
-The gateway limits login/register per IP, so this paces itself (about one user every 2 seconds)."""
+"""Creates N load-test users through the gateway and writes their logins to load/users.json.
+k6 logs them in itself at the start of each test (load/fest.js setup), so tokens are always fresh; access tokens
+expire after 15 minutes. The gateway limits register/login per IP, so this paces itself (about one user a second).
+
+    scripts/py.sh load/make_users.py 100
+"""
 import json
 import sys
 import time
@@ -9,21 +13,22 @@ from pathlib import Path
 import requests
 
 API = "http://localhost:9080/api/v1"
+PASSWORD = "load-test-password"
 n = int(sys.argv[1]) if len(sys.argv) > 1 else 100
-tokens = []
+users = []
 for i in range(n):
-    email, pw = f"load{i}@codearena.local", "load-test-password"
+    email = f"load{i}@codearena.local"
     while True:
-        requests.post(f"{API}/auth/register", json={"email": email, "password": pw, "displayName": f"load_{i}"})
-        r = requests.post(f"{API}/auth/login", json={"email": email, "password": pw})
-        if r.status_code == 429:
+        r = requests.post(f"{API}/auth/register", json={"email": email, "password": PASSWORD, "displayName": f"load_{i}"})
+        if r.status_code == 429:          # rate limited: wait for the bucket to refill
             time.sleep(1.1)
             continue
-        r.raise_for_status()
-        tokens.append(r.json()["accessToken"])
+        if r.status_code not in (200, 201, 409):   # 409 = already exists from an earlier run, which is fine
+            sys.exit(f"\nregister {email} failed: {r.status_code} {r.text[:200]}")
         break
+    users.append({"email": email, "password": PASSWORD})
     print(f"\r{i + 1}/{n}", end="", flush=True)
-    time.sleep(2.1)   # register + login = 2 requests; the per-IP limit refills 1 per second
-out = Path(__file__).parent / "tokens.json"
-out.write_text(json.dumps(tokens))
-print(f"\nwrote {out} (tokens expire in 15 minutes; rerun before a long test)")
+    time.sleep(1.05)   # the per-IP limit refills one request per second
+out = Path(__file__).parent / "users.json"
+out.write_text(json.dumps(users))
+print(f"\nwrote {out}")
