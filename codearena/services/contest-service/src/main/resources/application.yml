@@ -1,0 +1,14 @@
+server:
+  port: ${PORT:9084}
+spring:
+  application:
+    name: contest-service
+  config:
+    import: classpath:codearena-common.yml
+
+codearena:
+  leaderboard:
+    refresh-ms: 5000          # snapshot rebuild interval (requirement: every 5 seconds)
+    snapshot-ttl: 10s         # a snapshot outlives one missed refresh, then disappears
+    top: 100
+    wrong-attempt-penalty-min: 20
