@@ -113,7 +113,8 @@ API=${API:-http://localhost:9080/api/v1}
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 [[ -f $ROOT/.env ]] && { set -a; source "$ROOT/.env"; set +a; }
 ADMIN_EMAIL=${BOOTSTRAP_ADMIN_EMAIL:-admin@codearena.local}
-PASS='smoke-test-pass-1'
+PASS='smoke-test-pass-1'                           # password of the throw-away test users
+ADMIN_PASS=${ADMIN_PASSWORD:-change-me-please}     # the admin you registered in chapter 04
 RUN=$RANDOM
 pass=0; fail=0
 
@@ -124,10 +125,16 @@ ok() { echo "  ok   $1"; pass=$((pass + 1)); }
 bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
 expect() { [[ "$2" == "$3" ]] && ok "$1" || bad "$1: expected '$3', got '$2'"; }
 
-register() { curl -s -o /dev/null -w '%{http_code}' -X POST "$API/auth/register" -H 'content-type: application/json' \
-  -d "{\"email\":\"$1\",\"password\":\"$PASS\",\"displayName\":\"$2\"}"; }
-login() { curl -sf -X POST "$API/auth/login" -H 'content-type: application/json' \
-  -d "{\"email\":\"$1\",\"password\":\"$PASS\"}" | j accessToken; }
+register() {   # email name [password]
+  curl -s -o /dev/null -w '%{http_code}' -X POST "$API/auth/register" -H 'content-type: application/json' \
+    -d "{\"email\":\"$1\",\"password\":\"${3:-$PASS}\",\"displayName\":\"$2\"}"; }
+login() {      # email [password] -> access token, or nothing if the login fails
+  local out
+  out=$(curl -s -X POST "$API/auth/login" -H 'content-type: application/json' \
+    -d "{\"email\":\"$1\",\"password\":\"${2:-$PASS}\"}") || true
+  python3 -c 'import sys,json
+try: print(json.loads(sys.stdin.read())["accessToken"])
+except Exception: pass' <<<"$out"; }
 
 submit() {   # token slug lang mode code-file [contestId] -> submission id
   local body
@@ -147,10 +154,13 @@ verdict() {  # token id -> final status (waits up to 60 s)
 }
 
 echo "== auth"
-expect "register admin (or already exists)" "$(register "$ADMIN_EMAIL" admin | sed 's/409/201/')" 201
+expect "register admin (or already exists)" "$(register "$ADMIN_EMAIL" admin "$ADMIN_PASS" | sed 's/409/201/')" 201
 expect "register user" "$(register "user$RUN@codearena.local" "user$RUN")" 201
-ADMIN=$(login "$ADMIN_EMAIL"); USER=$(login "user$RUN@codearena.local")
-[[ -n $ADMIN && -n $USER ]] && ok "login both" || bad "login"
+ADMIN=$(login "$ADMIN_EMAIL" "$ADMIN_PASS")
+[[ -n $ADMIN ]] || { bad "login $ADMIN_EMAIL (admin password wrong? run: ADMIN_PASSWORD=... scripts/smoke.sh)"; exit 1; }
+USER=$(login "user$RUN@codearena.local")
+[[ -n $USER ]] || { bad "login user$RUN@codearena.local"; exit 1; }
+ok "login both"
 expect "user is blocked from admin API" \
   "$(curl -s -o /dev/null -w '%{http_code}' "$API/admin/problems" -H "authorization: Bearer $USER")" 403
 expect "admin reaches admin API" \
@@ -215,6 +225,9 @@ echo
 echo "passed: $pass  failed: $fail"
 [[ $fail == 0 ]]
 ```
+
+It logs in as the admin with the password from chapter 04 (`change-me-please`). If you chose another one, run it as
+`ADMIN_PASSWORD=yourpass scripts/smoke.sh`. Each run creates a new test user and a new contest in your local data.
 
 ```bash
 sandbox-images/build-all.sh python     # the smoke test only needs the Python runner

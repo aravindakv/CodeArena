@@ -1018,7 +1018,7 @@ class SandboxRedTeamTest {
             correct solution        | return x * 2                                                            | ACCEPTED
             wrong answer            | return x + 2                                                            | WRONG_ANSWER
             infinite loop           | while True: pass                                                        | TIME_LIMIT_EXCEEDED
-            fork bomb               | import os\\nwhile True: os.fork()                                        | RUNTIME_ERROR/MEMORY_LIMIT_EXCEEDED
+            fork bomb               | import os\\nwhile True: os.fork()                                        | RUNTIME_ERROR
             memory bomb             | x = [1] * (300 * 1024 * 1024)\\nreturn 0                               | MEMORY_LIMIT_EXCEEDED
             network call            | import urllib.request\\nurllib.request.urlopen('http://1.1.1.1', timeout=2)\\nreturn x * 2 | RUNTIME_ERROR
             cloud metadata          | import urllib.request\\nurllib.request.urlopen('http://169.254.169.254/', timeout=2)\\nreturn x * 2 | RUNTIME_ERROR
@@ -1029,9 +1029,7 @@ class SandboxRedTeamTest {
             """)
     void sandboxContainsIt(String name, String body, String expected) throws Exception {
         Verdict v = judge(body.replace("\\n", "\n"));
-        // "A/B" = either is a correct containment. A fork bomb hits the pids limit (RUNTIME_ERROR) or,
-        // since ~128 Python processes outgrow 128 MB, the memory cgroup first (MEMORY_LIMIT_EXCEEDED).
-        assertThat(v.status()).as(name + " -> " + v.message()).isIn((Object[]) expected.split("/"));
+        assertThat(v.status()).as(name + " -> " + v.message()).isEqualTo(expected);
     }
 }
 ```
