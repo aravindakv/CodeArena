@@ -1,0 +1,12 @@
+server:
+  port: ${PORT:9083}
+spring:
+  application:
+    name: submission-service
+  config:
+    import: classpath:codearena-common.yml
+
+codearena:
+  problem-url: ${PROBLEM_URL:http://localhost:9082}
+  submissions-bucket: codearena-submissions
+  max-code-bytes: 65536

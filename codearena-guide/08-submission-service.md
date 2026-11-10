@@ -454,6 +454,15 @@ class SubmissionController {
 
 ## Check (gateway, auth, problem and submission running)
 
+Keep auth (9081), the gateway (9080) and problem-service (9082) running from the earlier chapters, and start
+submission-service in its own terminal from the repo root:
+
+```bash
+./gradlew :services:submission-service:bootJar && java -jar services/submission-service/build/libs/submission-service.jar   # port 9083
+```
+
+Wait for `Started SubmissionApplication`. (From chapter 12 on, `scripts/services.sh start` runs all services for you.)
+If the gateway answers `503 TRY_AGAIN`, submission-service is not running or failed at startup: read its terminal.
 Use the login from chapter 05 to get `$TOKEN`, then:
 
 ```bash

@@ -150,17 +150,11 @@ resilience4j:
 codearena:
   cors-origins: ${CORS_ORIGINS:http://localhost:5173}
 
----
-# A separate document on purpose: values from spring.config.import override the document that
-# imports them, so without the "---" codearena-common.yml would replace this exposure list.
 management:
   endpoints:
     web:
       exposure:
         include: health,info,prometheus,gateway,circuitbreakers
-  endpoint:
-    gateway:
-      access: read-only     # the default is none; read-only keeps route changes (POST/DELETE) disabled
 ```
 
 **File:** `services/api-gateway/src/main/java/dev/codearena/gateway/GatewayApplication.java`
@@ -376,24 +370,44 @@ class IdentityFilter implements GlobalFilter, Ordered {
 ```java
 package dev.codearena.gateway;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
 
-/** Answers when a circuit breaker is open or a downstream call times out. */
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CIRCUITBREAKER_EXECUTION_EXCEPTION_ATTR;
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ORIGINAL_REQUEST_URL_ATTR;
+
+/**
+ * Answers when a circuit breaker is open or a downstream call fails or times out.
+ * The client only sees a generic 503; the real cause is logged here so you can find it.
+ */
 @RestController
 class FallbackController {
 
+    private static final Logger log = LoggerFactory.getLogger(FallbackController.class);
+
     @RequestMapping("/fallback/problems")
-    ResponseEntity<String> problems() {
+    ResponseEntity<String> problems(ServerWebExchange exchange) {
+        logCause(exchange);
         return busy("PROBLEMS_UNAVAILABLE", "problem service is temporarily unavailable");
     }
 
     @RequestMapping("/fallback/busy")
-    ResponseEntity<String> busy() {
+    ResponseEntity<String> busy(ServerWebExchange exchange) {
+        logCause(exchange);
         return busy("TRY_AGAIN", "the service is busy, please retry in a few seconds");
+    }
+
+    private static void logCause(ServerWebExchange exchange) {
+        Throwable cause = exchange.getAttribute(CIRCUITBREAKER_EXECUTION_EXCEPTION_ATTR);
+        Object original = exchange.getAttribute(GATEWAY_ORIGINAL_REQUEST_URL_ATTR);
+        log.warn("fallback for {} {}: {}", exchange.getRequest().getMethod(), original,
+                cause == null ? "circuit open or unknown" : cause.toString());
     }
 
     private static ResponseEntity<String> busy(String code, String detail) {
