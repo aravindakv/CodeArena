@@ -103,19 +103,22 @@ raise SystemExit(main())
 
 ```python
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
 
 def _load_dotenv():
-    """Read the repo's .env (KEY=VALUE lines) without overriding real environment variables."""
+    """Read the repo's .env (KEY=VALUE lines) without overriding real environment variables.
+    Like bash `source`, a "#" at the start of a value or after whitespace starts a comment."""
     for candidate in (Path.cwd() / ".env", Path(__file__).resolve().parents[2] / ".env"):
         if candidate.is_file():
             for line in candidate.read_text().splitlines():
                 line = line.strip()
                 if line and not line.startswith("#") and "=" in line:
                     k, v = line.split("=", 1)
-                    os.environ.setdefault(k.strip(), v.strip())
+                    v = re.sub(r"(^|\s)#.*", "", v.strip()).strip()
+                    os.environ.setdefault(k.strip(), v)
             return
 
 

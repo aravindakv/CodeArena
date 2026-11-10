@@ -1,0 +1,1 @@
+"""CodeArena AI + RAG ingestion worker (admin-triggered)."""
