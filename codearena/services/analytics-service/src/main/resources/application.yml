@@ -1,0 +1,10 @@
+server:
+  port: ${PORT:9085}
+spring:
+  application:
+    name: analytics-service
+  config:
+    import: classpath:codearena-common.yml
+
+codearena:
+  stats-zone: ${STATS_TIME_ZONE:Asia/Kolkata}    # which calendar day a submission counts on (streaks, heatmap)
