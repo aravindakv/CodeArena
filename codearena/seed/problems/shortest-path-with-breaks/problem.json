@@ -1,0 +1,55 @@
+{
+  "slug": "shortest-path-with-breaks",
+  "title": "Shortest Path With Wall Breaks",
+  "difficulty": "HARD",
+  "tags": [
+    "graphs",
+    "bfs",
+    "matrix"
+  ],
+  "statement": "You are in the top-left cell of `grid` and want to reach the bottom-right cell. `0` is an open cell and `1` is a wall. Each step moves one cell up, down, left or right.\n\nYou may break through **at most `k` walls** along the way (walking into a wall cell breaks it).\n\nReturn the minimum number of steps, or `-1` if the target cannot be reached. The start and target cells are always open.",
+  "constraints": [
+    "1 <= rows, cols <= 40",
+    "0 <= k <= rows * cols",
+    "grid[0][0] == grid[rows-1][cols-1] == 0"
+  ],
+  "examples": [
+    {
+      "input": "grid = [[0,1,0],[1,1,0],[0,0,0]], k = 1",
+      "output": "4",
+      "explanation": "Break the wall at (0,1), then go right and down."
+    },
+    {
+      "input": "grid = [[0,1,0],[1,1,0],[0,0,0]], k = 0",
+      "output": "-1",
+      "explanation": "Both neighbours of the start are walls."
+    },
+    {
+      "input": "grid = [[0]], k = 0",
+      "output": "0"
+    }
+  ],
+  "signature": {
+    "function": "shortestPath",
+    "params": [
+      {
+        "name": "grid",
+        "type": "int[][]"
+      },
+      {
+        "name": "k",
+        "type": "int"
+      }
+    ],
+    "returns": "int",
+    "compare": "JSON"
+  },
+  "limits": {
+    "timeMs": 3000,
+    "memoryMb": 256
+  },
+  "hints": [
+    "BFS over states (row, col, walls broken so far).",
+    "Breaking more than rows + cols - 3 walls is never needed."
+  ]
+}

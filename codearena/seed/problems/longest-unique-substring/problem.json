@@ -1,0 +1,48 @@
+{
+  "slug": "longest-unique-substring",
+  "title": "Longest Run Without Repeats",
+  "difficulty": "MEDIUM",
+  "tags": [
+    "strings",
+    "sliding-window",
+    "hash-map"
+  ],
+  "statement": "Given a string `s` of lowercase English letters, return the length of the longest **contiguous** substring in which no letter appears twice.",
+  "constraints": [
+    "0 <= s.length <= 10^5",
+    "s contains only a-z"
+  ],
+  "examples": [
+    {
+      "input": "s = \"pqrpqs\"",
+      "output": "4",
+      "explanation": "\"rpqs\" has no repeated letter."
+    },
+    {
+      "input": "s = \"zzzz\"",
+      "output": "1"
+    },
+    {
+      "input": "s = \"\"",
+      "output": "0"
+    }
+  ],
+  "signature": {
+    "function": "longestUniqueRun",
+    "params": [
+      {
+        "name": "s",
+        "type": "string"
+      }
+    ],
+    "returns": "int",
+    "compare": "JSON"
+  },
+  "limits": {
+    "timeMs": 2000,
+    "memoryMb": 256
+  },
+  "hints": [
+    "Keep a window [left, right] with no repeats and the last index of every letter."
+  ]
+}

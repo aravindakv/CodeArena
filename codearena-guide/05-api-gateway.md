@@ -150,11 +150,17 @@ resilience4j:
 codearena:
   cors-origins: ${CORS_ORIGINS:http://localhost:5173}
 
+---
+# A separate document on purpose: values from spring.config.import override the document that
+# imports them, so without the "---" codearena-common.yml would replace this exposure list.
 management:
   endpoints:
     web:
       exposure:
         include: health,info,prometheus,gateway,circuitbreakers
+  endpoint:
+    gateway:
+      access: read-only     # the default is none; read-only keeps route changes (POST/DELETE) disabled
 ```
 
 **File:** `services/api-gateway/src/main/java/dev/codearena/gateway/GatewayApplication.java`

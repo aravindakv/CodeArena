@@ -1,0 +1,125 @@
+server:
+  port: ${PORT:9080}
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: classpath:codearena-common.yml
+  threads:
+    virtual:
+      enabled: false          # reactive (Netty) app
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 10s
+          default-filters:
+            - name: RequestSize
+              args:
+                maxSize: 128KB          # code is capped at 64 KB; this leaves room for JSON
+          routes:
+            # ---- auth: login/register get a strict per-IP limit against credential stuffing
+            - id: auth-login
+              uri: ${AUTH_URL:http://localhost:9081}
+              predicates:
+                - Path=/api/v1/auth/login,/api/v1/auth/register
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@ipKeyResolver}"
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 10
+            - id: auth
+              uri: ${AUTH_URL:http://localhost:9081}
+              predicates:
+                - Path=/api/v1/auth/**,/api/v1/admin/users/**
+              filters:
+                - StripPrefix=1
+            # ---- problems (+ admin problem management and AI ingestion)
+            - id: problems
+              uri: ${PROBLEM_URL:http://localhost:9082}
+              predicates:
+                - Path=/api/v1/problems/**,/api/v1/languages,/api/v1/admin/problems/**,/api/v1/admin/ingestion/**
+              filters:
+                - StripPrefix=1
+                - name: CircuitBreaker
+                  args:
+                    name: problems
+                    fallbackUri: forward:/fallback/problems
+            # ---- submissions: POST is rate limited per user (polling GETs are not)
+            - id: submissions-post
+              uri: ${SUBMISSION_URL:http://localhost:9083}
+              predicates:
+                - Path=/api/v1/submissions,/api/v1/submissions/**
+                - Method=POST
+              filters:
+                - StripPrefix=1
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@userKeyResolver}"
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 5
+                - name: CircuitBreaker
+                  args:
+                    name: submissions
+                    fallbackUri: forward:/fallback/busy
+            - id: submissions
+              uri: ${SUBMISSION_URL:http://localhost:9083}
+              predicates:
+                - Path=/api/v1/submissions,/api/v1/submissions/**
+              filters:
+                - StripPrefix=1
+            # ---- contests and leaderboards
+            - id: contests
+              uri: ${CONTEST_URL:http://localhost:9084}
+              predicates:
+                - Path=/api/v1/contests,/api/v1/contests/**,/api/v1/admin/contests,/api/v1/admin/contests/**
+              filters:
+                - StripPrefix=1
+                - name: CircuitBreaker
+                  args:
+                    name: contests
+                    fallbackUri: forward:/fallback/busy
+            # ---- per-user stats and admin analytics
+            - id: analytics
+              uri: ${ANALYTICS_URL:http://localhost:9085}
+              predicates:
+                - Path=/api/v1/me/**,/api/v1/admin/analytics/**
+              filters:
+                - StripPrefix=1
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 3s
+        slow-call-rate-threshold: 80
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 8s
+
+codearena:
+  cors-origins: ${CORS_ORIGINS:http://localhost:5173}
+
+---
+# A separate document on purpose: values from spring.config.import override the document that
+# imports them, so without the "---" codearena-common.yml would replace this exposure list.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,gateway,circuitbreakers
+  endpoint:
+    gateway:
+      access: read-only     # the default is none; read-only keeps route changes (POST/DELETE) disabled

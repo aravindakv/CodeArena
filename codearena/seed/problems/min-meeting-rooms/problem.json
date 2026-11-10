@@ -1,0 +1,49 @@
+{
+  "slug": "min-meeting-rooms",
+  "title": "Fewest Meeting Rooms",
+  "difficulty": "MEDIUM",
+  "tags": [
+    "intervals",
+    "sorting",
+    "heap"
+  ],
+  "statement": "Each meeting is given as `[start, end]` with `start < end`; a meeting occupies a room for the half-open time range `[start, end)`. A meeting that ends at time `t` frees its room for a meeting that starts at `t`.\n\nReturn the minimum number of rooms needed to hold all `meetings`.",
+  "constraints": [
+    "1 <= meetings.length <= 10^5",
+    "0 <= start < end <= 10^9"
+  ],
+  "examples": [
+    {
+      "input": "meetings = [[2,12],[4,6],[7,9]]",
+      "output": "2",
+      "explanation": "[4,6] and [7,9] can share one room while [2,12] uses another."
+    },
+    {
+      "input": "meetings = [[1,5],[5,9]]",
+      "output": "1",
+      "explanation": "The second meeting starts exactly when the first ends."
+    },
+    {
+      "input": "meetings = [[1,4],[2,5],[3,6]]",
+      "output": "3"
+    }
+  ],
+  "signature": {
+    "function": "minRooms",
+    "params": [
+      {
+        "name": "meetings",
+        "type": "int[][]"
+      }
+    ],
+    "returns": "int",
+    "compare": "JSON"
+  },
+  "limits": {
+    "timeMs": 2000,
+    "memoryMb": 256
+  },
+  "hints": [
+    "Sort by start; keep a min-heap of end times of meetings in progress."
+  ]
+}

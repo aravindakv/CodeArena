@@ -1,0 +1,21 @@
+{
+  "slug": "count-islands",
+  "title": "Count the Islands",
+  "difficulty": "MEDIUM",
+  "tags": ["graphs", "matrix", "bfs"],
+  "statement": "A map is given as a grid of `0`s (water) and `1`s (land). An **island** is a group of land cells connected horizontally or vertically (not diagonally).\n\nReturn the number of islands in `grid`.",
+  "constraints": ["1 <= rows, cols <= 300", "grid[r][c] is 0 or 1"],
+  "examples": [
+    {"input": "grid = [[1,1,0,0],[1,0,0,1],[0,0,1,1]]", "output": "2"},
+    {"input": "grid = [[1,0,1],[0,1,0],[1,0,1]]", "output": "5", "explanation": "Diagonal neighbours are not connected."},
+    {"input": "grid = [[0]]", "output": "0"}
+  ],
+  "signature": {
+    "function": "countIslands",
+    "params": [{"name": "grid", "type": "int[][]"}],
+    "returns": "int",
+    "compare": "JSON"
+  },
+  "limits": {"timeMs": 3000, "memoryMb": 256},
+  "hints": ["Each time you meet unvisited land, flood-fill its whole island with BFS and count one."]
+}

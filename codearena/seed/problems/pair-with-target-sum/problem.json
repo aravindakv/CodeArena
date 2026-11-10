@@ -1,0 +1,21 @@
+{
+  "slug": "pair-with-target-sum",
+  "title": "Pair With Target Sum",
+  "difficulty": "EASY",
+  "tags": ["arrays", "hash-map"],
+  "statement": "You are given an integer array `nums` and an integer `target`.\n\nReturn the indices `[i, j]` (with `i < j`) of two elements whose sum is exactly `target`.\n\nIf several pairs exist, return the pair with the **smallest `j`**; if several pairs share that `j`, return the one with the **smallest `i`**. It is guaranteed that at least one pair exists.",
+  "constraints": ["2 <= nums.length <= 10^5", "-10^9 <= nums[i] <= 10^9", "-2 * 10^9 <= target <= 2 * 10^9"],
+  "examples": [
+    {"input": "nums = [3,1,4,6], target = 7", "output": "[0,2]", "explanation": "nums[0] + nums[2] = 3 + 4 = 7. Pair [1,3] also works, but its j is larger."},
+    {"input": "nums = [5,5], target = 10", "output": "[0,1]"},
+    {"input": "nums = [2,7,2,7], target = 9", "output": "[0,1]"}
+  ],
+  "signature": {
+    "function": "pairWithTargetSum",
+    "params": [{"name": "nums", "type": "int[]"}, {"name": "target", "type": "int"}],
+    "returns": "int[]",
+    "compare": "JSON"
+  },
+  "limits": {"timeMs": 2000, "memoryMb": 256},
+  "hints": ["For each j, you only need to know whether target - nums[j] appeared before, and where it first appeared."]
+}

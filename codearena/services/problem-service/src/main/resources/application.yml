@@ -1,0 +1,11 @@
+server:
+  port: ${PORT:9082}
+spring:
+  application:
+    name: problem-service
+  config:
+    import: classpath:codearena-common.yml
+
+codearena:
+  tests-bucket: codearena-tests
+  problem-list-cache-ttl: 10m
