@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: judge-worker
+  config:
+    import: classpath:codearena-common.yml
+  main:
+    web-application-type: none
+    keep-alive: true            # no web server; keep the JVM up for the SQS listeners
+  cloud:
+    aws:
+      sqs:
+        listener:
+          max-concurrent-messages: ${JUDGE_CONCURRENCY:4}
+          max-messages-per-poll: ${JUDGE_CONCURRENCY:4}
+
+codearena:
+  judge:
+    runtime: ${JUDGE_RUNTIME:runsc}                 # runsc = gVisor (recommended); runc = plain Docker (dev only)
+    work-root: ${JUDGE_WORK_ROOT:/tmp/codearena-judge}
+    problem-url: ${PROBLEM_URL:http://localhost:9082}
+    tests-bucket: codearena-tests
+    submissions-bucket: codearena-submissions
+    max-output-bytes: 65536
+    verdict-queues: verdict-events,contest-verdicts  # fan-out (EventBridge on AWS)
